@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request
+import requests
 
 app = Flask(__name__)
 
@@ -51,8 +52,31 @@ def results():
     elif users_city == 'nashville':
         output3 = "cool"
         
-
     users_list = {'beverage' : output,'animal': output2, 'city': output3}
     return render_template('fortune_results.html', users_list=users_list)
+
+@app.route('/weather')
+def weather():
+    return render_template('weather_form.html')
+
+@app.route('/weather_results')
+def weather_results_page():
+    weather_url = "https://api.openweathermap.org/data/2.5/weather"
+    users_city = request.args.get('city')
+    params = {
+        'q': users_city,
+        'appid': '3c0dc9d16cc178a3dc7bfb62aca44c3c'
+    }
+    response = requests.get(weather_url, params=params)
+    response_json = response.json()
+    city = response_json['name']
+    temp = response_json['main']['temp']
+    
+    return render_template('weather_results.html', city=city, temp=temp)
+
+if __name__ == '__main__':
+    app.run()
+
+
 
         
