@@ -1,7 +1,12 @@
 from flask import Flask, render_template, request
 import requests
+import os
+from dotenv import load_dotenv
 
 app = Flask(__name__)
+
+load_dotenv()
+TENOR_API_KEY=os.getenv("TENOR_API_KEY")
 
 @app.route('/')
 def index():
@@ -10,12 +15,12 @@ def index():
 
 @app.route('/fortune')
 def fortune():
-    """Renders the home page with links to Fortune and Weather."""
+    """Renders the fortune page"""
     return render_template('fortune_form.html', )
 
 @app.route('/fortune_results')
 def results():
-    """Displays the user's fortune."""
+    """Displays the user's fortune based on the choices they made."""
     users_bev = request.args.get('beverage_list')
     users_animal = request.args.get('animal')
     users_city = request.args.get('city')
@@ -52,20 +57,22 @@ def results():
     elif users_city == 'nashville':
         output3 = "cool"
         
-    users_list = {'beverage' : output,'animal': output2, 'city': output3}
+    users_list = {output, output2, output3}
     return render_template('fortune_results.html', users_list=users_list)
 
 @app.route('/weather')
 def weather():
+    '''Renders the weather page that asks for'''
     return render_template('weather_form.html')
 
 @app.route('/weather_results')
 def weather_results_page():
+    '''displays the city's weather using the city arg that the user inputs. Runs it through the api. Renders page of that city'''
     weather_url = "https://api.openweathermap.org/data/2.5/weather"
     users_city = request.args.get('city')
     params = {
         'q': users_city,
-        'appid': '3c0dc9d16cc178a3dc7bfb62aca44c3c'
+        'appid': TENOR_API_KEY
     }
     response = requests.get(weather_url, params=params)
     response_json = response.json()
