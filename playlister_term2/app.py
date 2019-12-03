@@ -3,8 +3,10 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 
 client = MongoClient()
-db = client.Playlister
+db = client.get_default_database()
 playlists = db.playlists
+# Add this line:
+comments = db.comments
 
 app = Flask(__name__)
 
@@ -52,13 +54,13 @@ def playlists_submit():
 def playlists_show(playlist_id):
     """Show a single playlist."""
     playlist = playlists.find_one({'_id': ObjectId(playlist_id)})
-    return render_template('playlists_show.html', playlist=playlist)
+    playlist_comments = comments.find({'playlist_id': ObjectId(playlist_id)})
+    return render_template('playlists_show.html', playlist=playlist, comments=playlist_comments)
 
 @app.route('/playlists/<playlist_id>/edit')
 def playlists_edit(playlist_id):
     """Show the edit form for a playlist."""
     playlist = playlists.find_one({'_id': ObjectId(playlist_id)})
-    # Add the title parameter here
     return render_template('playlists_edit.html', playlist=playlist, title='Edit Playlist')
 
 @app.route('/playlists/<playlist_id>', methods=['POST'])
@@ -66,14 +68,12 @@ def playlists_update(playlist_id):
     """Submit an edited playlist."""
     video_ids = request.form.get('video_ids').split()
     videos = video_url_creator(video_ids)
-    # create our updated playlist
     updated_playlist = {
         'title': request.form.get('title'),
         'description': request.form.get('description'),
         'videos': videos,
         'video_ids': video_ids
     }
-    # set the former playlist to the new one we just updated/edited
     playlists.update_one(
         {'_id': ObjectId(playlist_id)},
         {'$set': updated_playlist})
@@ -85,6 +85,18 @@ def playlists_delete(playlist_id):
     """Delete one playlist."""
     playlists.delete_one({'_id': ObjectId(playlist_id)})
     return redirect(url_for('playlists_index'))
+
+@app.route('/playlists/comments', methods=['POST'])
+def comments_new():
+    """Submit a new comment."""
+    comment = {
+        'title': request.form.get('title'),
+        'content': request.form.get('content'),
+        'playlist_id': ObjectId(request.form.get('playlist_id')),
+    }
+    print(comment)
+    comment_id = comments.insert_one(comment).inserted_id
+    return redirect(url_for('playlists_show', playlist_id=request.form.get('playlist_id')))
 
 
 if __name__ == '__main__':
